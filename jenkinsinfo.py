@@ -82,10 +82,11 @@ class JenkinsInfo(object):
                     continue
                 use_builds = []
                 for build in data['allBuilds']:
+                    build_url = build['url']
                     ts2 = int(build['timestamp']) // 1000
                     if ts2 < ts:
                         break
-                    use_builds.append([url, ts2])
+                    use_builds.append([build_url, ts2])
                 print('        %s (%d%%)  (%d of %d)' % (job_name, (i * 100)/len(job_names), len(use_builds), len(data['allBuilds'])))
                 builds.extend(use_builds)
             except Exception as e:
@@ -149,11 +150,13 @@ class JenkinsInfo(object):
 
     def processBuilds(self, builds, search_for):
         time_start = time.time()
-        for build in builds:
+        num_builds = len(builds)
+        for i, build in enumerate(builds):
             url = build[0]
             ts = build[1]
             if search_for:
-                console_url = url.replace(API_JSON, '/console')
+                console_url = url + 'console'
+                print('%s (%d%%)' % (console_url, (i * 100) / num_builds))
                 failed_hosts = []
                 try:
                     response = urlopen(url, timeout=15)
@@ -170,7 +173,7 @@ class JenkinsInfo(object):
                     failed_hosts = sorted(failed_hosts.keys())
                     i = 0
                     while i < len(failed_hosts):
-                        print('        ' + '%s' % ', '.join(failed_hosts[i:i+12]))
+                        print('    %s' % ', '.join(failed_hosts[i:i+12]))
                         i += 12
         time_end = time.time()
         time_total = int(time_end - time_start)
