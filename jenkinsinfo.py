@@ -363,7 +363,7 @@ if __name__ == '__main__':
     parser.add_argument('--jn', action='store_true', help='Show the current list of Jenkins projects/jobs')
     parser.add_argument('--aj', action='store_true', help='Show the currently active projects/jobs')
     parser.add_argument('--bcs', action='store_true', help='Show builds whose logs contain the string (valid with -d, -s, -j and -b')
-    parser.add_argument('--jv', action='store_true', help='Show java version by computer', default=None)
+    parser.add_argument('--jv', action='store_true', help='Show java version by computer')
     parser.add_argument('--cba', action='store_true', help='Show the current list of computers by arch, OS, and version')
     args = parser.parse_args()
     JI = JenkinsInfo(args)
