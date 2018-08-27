@@ -38,6 +38,7 @@ class JenkinsInfo(object):
         self.aj = args.aj
         self.bcs = args.bcs
         self.jv = args.jv
+        self.cba = args.cba
         self.server = None
         return
 
@@ -121,6 +122,41 @@ class JenkinsInfo(object):
         [computers.append(computer['displayName']) for computer in data['computer'] if computer['displayName'] != 'master']
         return computers
 
+    def getComputersByArchOSVersion(self, computers):
+        computersByArchOSVersion = {}
+        for computer in computers:
+            url = 'http://%s:%d/computer/%s/systemInfo' % (self.host, self.port, computer)
+            try:
+                response = urlopen(url, timeout=5)
+                lines = response.readlines()
+            except Exception as e:
+                computersByArchOSVersion.setdefault('unknown', {})
+                computersByArchOSVersion['unknown'].setdefault('unknown', [])
+                computersByArchOSVersion['unknown']['unknown'].append(computer)
+                continue
+            arch = None
+            _os = None
+            version = None
+            for line in lines:
+                if 'is offline' in line:
+                    arch = 'offline'
+                    _os = 'offline'
+                    version = ''
+                    break
+                if 'os.arch' in line:
+                    arch = line.split('os.arch', 1)[1].split('</td></tr>', 1)[0].replace('<wbr>', '').split('>')[2]
+                if 'os.name' in line:
+                    _os = line.split('os.name', 1)[1].split('</td></tr>', 1)[0].replace('<wbr>', '').split('>')[2]
+                if 'os.version' in line:
+                    version = line.split('os.version', 1)[1].split('</td></tr>', 1)[0].replace('<wbr>', '').split('>')[2]
+                if arch and _os and version:
+                    break
+            computersByArchOSVersion.setdefault(arch, {})
+            os_version = '%s %s' % (_os, version)
+            computersByArchOSVersion[arch].setdefault(os_version, [])
+            computersByArchOSVersion[arch][os_version].append(computer)
+        return computersByArchOSVersion
+
     def getComputersInLabel(self):
         url = 'http://%s:%d%s%s' % (self.host, self.port, COMPUTER, API_JSON)
         try:
@@ -160,6 +196,7 @@ class JenkinsInfo(object):
         if not self.server:
             return False
         job_names = None
+        computers = None
         if self.cil:
             computers_in_label = self.getComputersInLabel()
             self.showComputersInLabel(computers_in_label)
@@ -176,6 +213,11 @@ class JenkinsInfo(object):
         if self.jv:
             computers = self.getComputers()
             self.showJavaVersions(computers)
+        if self.cba:
+            if not computers:
+                computers = self.getComputers()
+            computers_by_arch = self.getComputersByArchOSVersion(computers)
+            self.showComputersByArchOSVersion(computers_by_arch)
         return True
 
     def nslookup(self, ip):
@@ -249,6 +291,21 @@ class JenkinsInfo(object):
         print('Time to process %d builds: %d min %d sec' % (len(builds), time_total // 60, time_total % 60))
         return
 
+    def showComputersByArchOSVersion(self, computers_by_arch):
+        for arch in sorted(computers_by_arch):
+            print(arch)
+            for _os in sorted(computers_by_arch[arch]):
+                print('    %s' % _os)
+                computers_by_arch[arch][_os] = sorted(computers_by_arch[arch][_os])
+                ll = 0
+                for c in computers_by_arch[arch][_os]:
+                    ll = len(c) if len(c) > ll else ll
+                i = 0
+                while i < len(computers_by_arch[arch][_os]):
+                    print('        %s' % ' '.join(['%-19s' % x for x in computers_by_arch[arch][_os][i:i+10]]))
+                    i += 10
+        return
+
     def showComputersInLabel(self, labels):
         print('\n------------------------')
         print('Computers by label')
@@ -307,6 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('--aj', action='store_true', help='Show the currently active projects/jobs')
     parser.add_argument('--bcs', action='store_true', help='Show builds whose logs contain the string (valid with -d, -s, -j and -b')
     parser.add_argument('--jv', action='store_true', help='Show java version by computer', default=None)
+    parser.add_argument('--cba', action='store_true', help='Show the current list of computers by arch, OS, and version')
     args = parser.parse_args()
     JI = JenkinsInfo(args)
     if not JI.main():
