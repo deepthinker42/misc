@@ -262,7 +262,11 @@ class JenkinsInfo(object):
                 try:
                     response = urlopen(console_url, timeout=15)
                     lines = response.readlines()
+                    error = None
                     for line in lines:
+                        line = line.strip()
+                        if not error and (': error ' in line or ': fatal error ' in line):
+                            error = line.split('</span>', 1)[1]
                         if not search_for in line:
                             if 'FATAL: Remote call on' in line:
                                 ip = line.split('to /', 1)[1].split(' ', 1)[0]
@@ -274,11 +278,15 @@ class JenkinsInfo(object):
                             failed_hosts.setdefault(self.nslookup(line.split('to Channel to /', 1)[1]), True)
                         elif 'FATAL:' in line:
                             failed_hosts.setdefault('fatal', True)
+                        else:
+                            failed_hosts.setdefault('unknown', error)
                 except Exception as e:
                     print('%s  %s  %s' % (console_url, time_str, e))
                     continue
                 if failed_hosts:
                     print('%s  %s  %s' % (console_url, time_str, ' '.join(sorted(failed_hosts))))
+                    if 'unknown' in failed_hosts and failed_hosts['unknown'] != True:
+                        print('    %s' % failed_hosts['unknown'])
                     """
                     failed_hosts = sorted(failed_hosts.keys())
                     i = 0
