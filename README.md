@@ -1,1 +1,2 @@
-# misc
+# automation
+    Various automation projects
