@@ -14,6 +14,7 @@
 # Builds
 
     List information about each of the last x days worth of builds.
+    Depending upon how many days are specified, this could take a long time.
     
     ./builds -H <Jenkins Master host name> -p <Jenkins Master port>
              -d <days back to search> -s "<string to search for>"
