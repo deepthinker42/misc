@@ -122,7 +122,7 @@ def getComputersByArchOSVersion(url, computers):
         os_version = '%s %s' % (_os, version)
         computersByArchOSVersion[arch].setdefault(os_version, [])
         computersByArchOSVersion[arch][os_version].append(computer)
-    return sorted(computersByArchOSVersion)
+    return computersByArchOSVersion
 
 def getComputersByLabel(host, port):
     url = 'http://%s:%d/computer/api/json' % (host, port)

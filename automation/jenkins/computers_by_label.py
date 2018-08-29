@@ -29,7 +29,7 @@ class ComputersByLabel(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get information about Jenkins builds')
+    parser = argparse.ArgumentParser(description='Get computers by label')
     parser.add_argument('-H', '--host', help='Jenkins master host name')
     parser.add_argument('-p', '--port', type=int, help='Jenkins master port')
     args = parser.parse_args()
