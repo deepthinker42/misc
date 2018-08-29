@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import json
-import traceback
 import argparse
-import datetime
 import time
 if sys.version >= (3,):
     from urllib.parse import urlencode
@@ -29,10 +26,7 @@ class Builds(object):
         return
 
     def main(self):
-        self.server = connect(self.url, self.username, self.password)
-        if not self.server:
-            return False
-        job_names = getJobNames(self.server)
+        job_names = getJobNames(self.host, self.port)
         if not job_names:
             return False
         print('Looking through %d jobs' % len(job_names))

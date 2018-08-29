@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 
-import sys
-import jenkins
-import pprint
-import json
-import traceback
 import argparse
-import datetime
-import time
-import subprocess
 if sys.version >= (3,):
     from urllib.parse import urlencode
     from urllib.request import urlopen, Request
@@ -49,7 +41,7 @@ class ActiveJobs(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get information about Jenkins builds')
+    parser = argparse.ArgumentParser(description='Get list of active Jenkins jobs')
     parser.add_argument('-H', '--host', help='Jenkins master host name')
     parser.add_argument('-p', '--port', type=int, help='Jenkins master port')
     parser.add_argument('-u', '--username', help='Jenkins master login username')

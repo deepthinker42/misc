@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import argparse
 from utils import getComputersByLabel
 
@@ -29,7 +28,7 @@ class ComputersByLabel(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get computers by label')
+    parser = argparse.ArgumentParser(description='Get list of Jenkins computers by label')
     parser.add_argument('-H', '--host', help='Jenkins master host name')
     parser.add_argument('-p', '--port', type=int, help='Jenkins master port')
     args = parser.parse_args()

@@ -149,13 +149,20 @@ def getComputersByLabel(host, port):
                 d[computer['displayName']] = computer['numExecutors']
     return computers_by_label
 
-def getJobNames(server):
+def getJobNames(host, port):
+    url = 'http://%s:%d/view/all/api/json?tree=jobs[name]' % (host, port)
+    try:
+        response = urlopen(url, timeout=5)
+    except Exception as e:
+        print('ERROR: could not open "%s": %s\n%s' % (url, e, traceback.format_exc(e)))
+        return
+    data = json.loads(response.read())
+    if not 'jobs' in data:
+        print('ERROR: No jobs found')
+        return
     job_names = []
-    queue = server.get_queue_info()
-    for entry in queue[:1]:
-        data = server.get_info(entry['url'])
-        for job in data['jobs']:
-            job_names.append('%s' % job['name'])
+    for job in data['jobs']:
+        job_names.append('%s' % job['name'])
     return sorted(job_names)
 
 def nslookup(ip):

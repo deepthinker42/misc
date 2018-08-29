@@ -57,7 +57,7 @@ class JavaVersions(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Get Java versions')
+    parser = argparse.ArgumentParser(description='Get Java versions of Jenkins slaves')
     parser.add_argument('-H', '--host', help='Jenkins master host name')
     parser.add_argument('-p', '--port', type=int, help='Jenkins master port')
     args = parser.parse_args()
