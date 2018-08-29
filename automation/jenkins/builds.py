@@ -16,8 +16,6 @@ class Builds(object):
     def __init__(self, args):
         self.host = args.host
         self.port = args.port
-        self.username = args.username
-        self.password = args.password
         self.days = args.days
         self.search = args.search
         self.specific_job = args.job
@@ -98,8 +96,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get information about Jenkins builds')
     parser.add_argument('-H', '--host', help='Jenkins master host name')
     parser.add_argument('-p', '--port', type=int, help='Jenkins master port')
-    parser.add_argument('-u', '--username', help='Jenkins master login username')
-    parser.add_argument('-P', '--password', help='Jenkins master login password')
     parser.add_argument('-d', '--days', type=int, help='Days in the past to look at (default: %(default)d day(s)) (only valid for --bcs)', default=1)
     parser.add_argument('-s', '--search', help='String to search for in the build logs (only valid for --bcs)', default=None)
     parser.add_argument('-j', '--job', help='Only search a specific job (only valid for --bcs)', default=None)
