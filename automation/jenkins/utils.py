@@ -124,21 +124,30 @@ def getComputersByArchOSVersion(url, computers):
         computersByArchOSVersion[arch][os_version].append(computer)
     return sorted(computersByArchOSVersion)
 
-def getComputersInLabel(url):
-    computers = getComputers(url)
-    labels = {}
+def getComputersByLabel(host, port):
+    url = 'http://%s:%d/computer/api/json' % (host, port)
+    try:
+        response = urlopen(url, timeout=5)
+    except Exception as e:
+        print('ERROR: could not open "%s": %s\n%s' % (url, e, traceback.format_exc(e)))
+        return
+    data = json.loads(response.read())
+    if not 'computer' in data:
+        print('ERROR: No computers found')
+        return
+    computers_by_label = {}
     for computer in data['computer']:
         if 'Slave' not in computer['_class']:
             continue
         if not 'assignedLabels' in computer:
             if not 'displayName' in computer:
                 continue
-            labels.setdefault(computer['displayName'], {computer['displayName']: computer['numExecutors']})
+            computers_by_label.setdefault(computer['displayName'], {computer['displayName']: computer['numExecutors']})
         else:
             for assignedLabel in computer['assignedLabels']:
-                d = labels.setdefault(assignedLabel['name'], {})
+                d = computers_by_label.setdefault(assignedLabel['name'], {})
                 d[computer['displayName']] = computer['numExecutors']
-    return labels
+    return computers_by_label
 
 def getJobNames(server):
     job_names = []
