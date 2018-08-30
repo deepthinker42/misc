@@ -24,7 +24,7 @@ class Builds(object):
         return
 
     def main(self):
-        job_names = getJobNames(self.host, self.port)
+        job_names = [self.specific_job] if self.specific_job else getJobNames(self.host, self.port)
         if not job_names:
             return False
         print('Looking through %d jobs' % len(job_names))
@@ -64,8 +64,11 @@ class Builds(object):
                             continue
                         if 'Cannot contact ' in line:
                             failed_hosts.setdefault(line.split('Cannot contact ', 1)[1].split(':', 1)[0], True)
-                        elif 'to Channel to ' in line:
-                            failed_hosts.setdefault(nslookup(line.split('to Channel to /', 1)[1]), True)
+                        elif '/' in line:
+                            try:
+                                failed_hosts.setdefault(nslookup(line.rsplit('/', 1)[1].rsplit(' ')[0].rsplit(':')[0]), True)
+                            except:
+                                failed_hosts.setdefault('unknown', error)
                         elif 'FATAL:' in line:
                             failed_hosts.setdefault('fatal', True)
                         else:
