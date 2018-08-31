@@ -39,10 +39,8 @@ class MemoryHoistingTest(object):
             try:
                 cmd = 'ssh %s@%s dmesg > %s' % (self.username, self.sut, dmesg_out)
                 subprocess.call(cmd, shell=True)
-                """
                 cmd = 'ssh %s@%s free -gt > %s' % (self.username, self.sut, free_out)
                 subprocess.call(cmd, shell=True)
-                """
             except Exception as e:
                 print('Error: command "%s" failed: %s\n%s' % cmd, e, traceback.format_exc(e))
                 return False
@@ -54,28 +52,24 @@ class MemoryHoistingTest(object):
                 return False
             self.dmesg_file = dmesg_out
             self.free_file = free_out
-        if not os.path.exists(self.dmesg_file):
-            print('Error: "%s" does not exist' % self.dmesg_file)
-            return False
-        """
+
+        result = True
         if not os.path.exists(self.free_file):
-            print('Error: "%s" does not exist' % self.free_file)
-            return False
+            print('WARNING: output of free command does not exist.  Tests on free memory will not be done.\n')
+        else:
+            with open(self.free_file) as f:
+                free_lines = f.readlines()
+            result = result and self.test_free(free_lines)
 
-        with open(self.free_file) as f:
-            free_lines = f.readlines()
-        """
-        with open(self.dmesg_file) as f:
-            dmesg_lines = f.readlines()
-        """
-        self.test_free(free_lines)
-        """
-        self.test_bios_e820(dmesg_lines)
-        self.test_srat_node(dmesg_lines)
-        return True
-
-    def process_dmesg(self):
-        return
+        if not os.path.exists(self.dmesg_file):
+            print('WARNING: output of dmesg command does not exist.  Tests on BIOS-e820 and SRAT will not be done.\n')
+            do_dmesg_tests = False
+        else:
+            with open(self.dmesg_file) as f:
+                dmesg_lines = f.readlines()
+            result = result and self.test_bios_e820(dmesg_lines)
+            result = result and self.test_srat_node(dmesg_lines)
+        return result
 
     def test_free(self, lines):
         free_total_memory = 0
@@ -226,8 +220,8 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--interleave', help='Interleave (default: %(default)s)', choices=[None, 'chipset', 'channel'], default=None)
     parser.add_argument('-f', '--dmesg', help='Path to output of dmesg', default='dmesg.out')
     parser.add_argument('-F', '--free', help='Path to output of free', default='free.out')
-    parser.add_argument('-u', '--username', help='Username for ssh to SUT', default='srv_bios')
-    parser.add_argument('-s', '--sut', help='SUT from which to get dmesg outut')
+    parser.add_argument('-u', '--username', help='Username for ssh to SUT (only valid with -s)', default='srv_bios')
+    parser.add_argument('-s', '--sut', help='SUT from which to get dmesg outut (only valid with -u)')
     args = parser.parse_args()
     MHT = MemoryHoistingTest(args)
     if not MHT.main():
