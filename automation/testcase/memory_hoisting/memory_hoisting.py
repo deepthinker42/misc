@@ -156,20 +156,26 @@ class MemoryHoistingTest(object):
     def test_srat_node(self, lines):
         addr_list = []
         addr_dict = {}
+        nodes_dict = {}
         for line in lines:
             if not 'SRAT: Node ' in line:
                 continue
+            node = int(line.split('Node ')[1].split('PXM')[0])
             cols = line.strip().split()[-1].replace(']', '').split('-')
-            starting = long(cols[0], 16)
-            ending = long(cols[1], 16)
+            starting = int(cols[0], 16)
+            ending = int(cols[1], 16)
             addr_list.extend([starting, ending])
             addr_dict[starting] = ending
+            nodes_dict.setdefault(node, 0)
+            nodes_dict[node] += ending + 1 - starting
 
         if not self.test_srat_node_0_to_under_4GB_contiguous(addr_dict):
             return False
         if not self.test_srat_node_memory_hole_under_4GB_hoisted_to_4GB(addr_dict):
             return False
         if not self.test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(addr_list, addr_dict):
+            return False
+        if not self.test_srat_node_all_nodes_same_size(nodes_dict):
             return False
         return True
 
@@ -200,6 +206,14 @@ class MemoryHoistingTest(object):
             print('FAIL:  SRAT:  0x%x hole starting 0x%x not hoisted above 1TB (0x%x)' % (hole_size, ending_addr + 1, addr_dict[ONE_TB]))
             return False
         print('PASS:  SRAT:  0x%x hole starting 0x%x hoisted above 1TB (0x%x - 0x%x)' % (hole_size, ending_addr + 1, ONE_TB, addr_dict[ONE_TB]))
+        return True
+
+    def test_srat_node_all_nodes_same_size(self, nodes):
+        size = nodes[sorted(nodes)[0]]
+        for node, node_size in sorted(nodes.items())[1:]:
+            if not node_size == size:
+                print('FAIL:  SRAT:  size of node %d (0x%x) differs from the other node sizes (0x%x)' % (node, node_size, size))
+        print('PASS:  SRAT:  all nodes are the same size (%dGB)' % (size / (1024 * 1024 * 1024)))
         return True
 
 
