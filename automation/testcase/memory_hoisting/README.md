@@ -53,5 +53,5 @@
       -s SUT, --sut SUT     SUT from which to get dmesg outut (only valid with -u)
 
 
-    If "-s SUT" is used, then it is assume that ssh keys have been exchanged with <username>@sut since this
+    If "-s SUT" is used, then it is assume that ssh keys have been exchanged with <username>@<sut> since this
     program will automatically get the output of "free" and "dmesg" from the sut.
