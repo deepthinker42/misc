@@ -49,7 +49,7 @@
                             Path to output of dmesg
       -F FREE, --free FREE  Path to output of free
       -u USERNAME, --username USERNAME
-                            Username for ssh to SUT (onlyvalid with -s)
+                            Username for ssh to SUT (only valid with -s)
       -s SUT, --sut SUT     SUT from which to get dmesg outut (only valid with -u)
 
 
