@@ -167,7 +167,7 @@ class MemoryHoistingTest(object):
             return False
         if not self.test_srat_node_memory_hole_under_4GB_hoisted_to_4GB(addr_dict):
             return False
-        if not self.test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(addr_list, addr_dict):
+        if not self.test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(addr_list, addr_dict, nodes_dict):
             return False
         if not self.test_srat_node_all_nodes_same_size(nodes_dict):
             return False
@@ -178,7 +178,7 @@ class MemoryHoistingTest(object):
         for starting_addr in starting_addr_indices:
             if (self.bios_e820_addr_list[starting_addr] != self.bios_e820_addr_list[starting_addr - 1] + 1) and self.bios_e820_addr_list[starting_addr] < addr_dict[0]:
                 print('FAIL:  SRAT:  address ranges between 0 and 0x100000000 are not contiguous (0x%0x, 0x%0x)' % (self.bios_e820_addr_list[starting_addr - 1], self.bios_e820_addr_list[starting_addr]))
-                break
+                return False
         print('PASS:  SRAT:  address ranges between 0 and 0x100000000 are contiguous')
         return True
 
@@ -190,7 +190,11 @@ class MemoryHoistingTest(object):
         print('PASS:  SRAT:  0x%x hole starting 0x%x hoisted above 4GB (0x%x - 0x%x)' % (hole_size, addr_dict[0] + 1, FOUR_GB, addr_dict[FOUR_GB]))
         return True
 
-    def test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(self, addr_list, addr_dict):
+    def test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(self, addr_list, addr_dict, nodes):
+        first_node_size = nodes[sorted(nodes)[0]]
+        if nodes.items()[0] >= ONE_TB:
+            print('PASS:  SRAT:  NUMA node 0 >= 1TB.  Memory hole below 1TB is disabled.')
+            return True
         if not ONE_TB in addr_dict:
             print('PASS:  SRAT:  no hole at 1TB because system has less than 1TB of memory')
             return True
@@ -207,6 +211,7 @@ class MemoryHoistingTest(object):
         for node, node_size in sorted(nodes.items())[1:]:
             if not node_size == size:
                 print('FAIL:  SRAT:  size of node %d (0x%x) differs from the other node sizes (0x%x)' % (node, node_size, size))
+                return False
         print('PASS:  SRAT:  all nodes are the same size (%dGB)' % (size / (1024 * 1024 * 1024)))
         return True
 
