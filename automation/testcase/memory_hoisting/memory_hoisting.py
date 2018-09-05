@@ -192,7 +192,7 @@ class MemoryHoistingTest(object):
 
     def test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(self, addr_list, addr_dict, nodes):
         first_node_size = nodes[sorted(nodes)[0]]
-        if nodes.items()[0] >= ONE_TB:
+        if first_node_size >= ONE_TB:
             print('PASS:  SRAT:  NUMA node 0 >= 1TB.  Memory hole below 1TB is disabled.')
             return True
         if not ONE_TB in addr_dict:
