@@ -169,7 +169,7 @@ def nslookup(ip):
     host = 'unknown'
     ip = ip.strip()
     try:
-        output = subprocess.check_output('nslookup %s | grep name' % ip, shell=True)
+        output = subprocess.check_output('nslookup "%s" | grep name' % ip, shell=True)
         if 'name = ' in output:
             host = output.split('name = ', 1)[1].split('.amd', 1)[0]
     except Exception as e:
