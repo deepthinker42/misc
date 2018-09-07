@@ -19,7 +19,7 @@ class MemoryHoistingTest(object):
     def __init__(self, args):
         self.cpus = args.cpus
         self.dpcs = args.dpcs
-        self.num_chips = args.chips
+        self.chips = args.chips
         self.mem_size_in_gb = args.gb
         self.interleave = args.interleave
         self.dmesg_file = args.dmesg
@@ -27,7 +27,7 @@ class MemoryHoistingTest(object):
         self.username = args.username
         self.sut = args.sut
 
-        self.total_memory = self.num_chips * self.mem_size_in_gb
+        self.total_memory = self.chips * self.mem_size_in_gb
         self.bios_e820_addr_list = []
         self.bios_e820_addr_dict = {}
         return
@@ -77,8 +77,8 @@ class MemoryHoistingTest(object):
             if 'Mem:' in line:
                 free_total_memory = int(line.split()[1])
                 break
-        if abs(self.total_memory - free_total_memory) >= 3:
-            print('FAIL:  Free memory:  Calculated memory (%dG) does not match free memory (%dG)' % (self.total_memory, free_total_memory))
+        if abs(self.total_memory - free_total_memory) >= 5:
+            print('FAIL:  Free memory:  Calculated memory (%dG) does not match free memory (%dG).  Do you have a bad dimm socket?' % (self.total_memory, free_total_memory))
             return False
         print('PASS:  Free memory:  Calculated memory (%dG) matches free memory (%dG)' % (self.total_memory, free_total_memory))
         return True
@@ -151,7 +151,11 @@ class MemoryHoistingTest(object):
         addr_list = []
         addr_dict = {}
         nodes_dict = {}
+        numa_nodes = 0
         for line in lines:
+            if 'distance table' in line:
+                numa_nodes = int(line.rsplit('=', 1)[1])
+                continue
             if not 'SRAT: Node ' in line:
                 continue
             node = int(line.split('Node ')[1].split('PXM')[0])
@@ -170,6 +174,8 @@ class MemoryHoistingTest(object):
         if not self.test_srat_node_memory_hole_under_1TB_hoisted_to_1TB(addr_list, addr_dict, nodes_dict):
             return False
         if not self.test_srat_node_all_nodes_same_size(nodes_dict):
+            return False
+        if not self.test_srat_numa_nodes(numa_nodes):
             return False
         return True
 
@@ -207,14 +213,34 @@ class MemoryHoistingTest(object):
         return True
 
     def test_srat_node_all_nodes_same_size(self, nodes):
+        retval = True
         size = nodes[sorted(nodes)[0]]
+        if size >= ONE_TB:
+            print('PASS:  SRAT:  > 1TB of memory.  Node sizes will not be compared')
+            return retval
         for node, node_size in sorted(nodes.items())[1:]:
             if not node_size == size:
-                print('FAIL:  SRAT:  size of node %d (0x%x) differs from the other node sizes (0x%x)' % (node, node_size, size))
-                return False
+                print('FAIL:  SRAT:  size of node %d (0x%x) differs from the other node sizes (0x%x).  Do you have a bad dimm socket?' % (node, node_size, size))
+                retval = False
+        if not retval:
+            return retval
         print('PASS:  SRAT:  all nodes are the same size (%dGB)' % (size / (1024 * 1024 * 1024)))
-        return True
+        return retval
 
+    def test_srat_numa_nodes(self, numa_nodes):
+        if self.interleave in ['none', 'cs', 'ch']:
+            calculated_numa_nodes = self.cpus * 4
+        elif self.interleave == 'di':
+            calculated_numa_nodes = self.cpus
+            if self.chips & 1:
+                calculated_numa_nodes += 3
+        elif self.interleave == 'so':
+            calculated_numa_nodes = 1
+        if numa_nodes != calculated_numa_nodes:
+            print('FAIL:  SRAT:  number of numa nodes (%d) does not match calculation based on cpus (%d)' % (numa_nodes, calculated_numa_nodes))
+            return False
+        print('PASS:  SRAT:  number of numa nodes (%d) matches calculation based on cpus (%d)' % (numa_nodes, calculated_numa_nodes))
+        return True
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Memory Hoisting Test')
@@ -222,7 +248,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dpcs', type=int, help='Number of DPCs (default: %(default)d)', choices=[1, 2], default=1)
     parser.add_argument('-n', '--chips', type=int, help='Number of memory chips installed (default: %(default)d)', default=16)
     parser.add_argument('-g', '--gb', type=int, help='Size in GB of each memory chip (default: %(default)d)', choices=[4, 8, 16, 32, 64], default=8)
-    parser.add_argument('-i', '--interleave', help='Interleave (default: %(default)s)', choices=['none', 'chipset', 'channel', 'die'], default='none')
+    parser.add_argument('-i', '--interleave', help='Interleave (default: %(default)s)', choices=['none', 'cs', 'ch', 'di', 'so'], default='none')
     parser.add_argument('-f', '--dmesg', help='Path to output of dmesg', default='dmesg.out')
     parser.add_argument('-F', '--free', help='Path to output of free', default='free.out')
     parser.add_argument('-u', '--username', help='Username for ssh to SUT (only valid with -s)', default='srv_bios')
