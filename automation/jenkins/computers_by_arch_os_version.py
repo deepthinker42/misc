@@ -73,7 +73,7 @@ class ComputersByArchOSVersion(object):
         for name in imported_computers_by_name_arch_os_version:
             if name not in computers_by_name_arch_os_version:
                 imported_arch = imported_computers_by_name_arch_os_version[name]['arch']
-                imported_os_version = computers_by_name_arch_os_version[name]['os_version']
+                imported_os_version = imported_computers_by_name_arch_os_version[name]['os_version']
                 if not name in unified_computers_by_arch_os_version[imported_arch][imported_os_version]:
                     unified_computers_by_arch_os_version[imported_arch][imported_os_version].append(name)
         return unified_computers_by_arch_os_version

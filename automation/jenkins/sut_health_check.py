@@ -28,92 +28,84 @@ class SUTHealthCheck(object):
 
     def getBMCIP(self, computer):
         bmc_ip = None
-        job = self.server.get_job('computer')
-        config = job.get_config()
+        try:
+            config = self.server.get_node_config(computer)
+        except:
+            return bmc_ip
         lines = [line.strip() for line in config.splitlines() if line.strip()]
         for i, line in enumerate(lines):
-            if 'value="BMC_IP"' in line:
-                bmc_ip = lines[i+1].split('value="', 1)[1].split('"', 1)[0].strip()
+            if 'bmc_ip' in line.lower():
+                bmc_ip = lines[i+1].split('>', 1)[1].split('<', 1)[0].strip()
+                break
+            if 'SUT' in computer and '<description>' in line and 'omputer' in line:
+                bmc_ip = line.split('omputer', 1)[1].split(':', 1)[1].strip().split(' ', 1)[0].strip()
+                break
         return bmc_ip
 
-    def getComputers(self, params='_class,displayName,offline'):
-        url = '%s/computer/api/json?tree=computer[%s]' % (self.url, params)
-        try:
-            response = urlopen(url, timeout=5)
-        except Exception as e:
-            print('ERROR: could not open "%s": %s\n%s' % (url, e, traceback.format_exc(e)))
-            return
-        data = json.loads(response.read())
-        if not 'computer' in data:
-            print('ERROR: No computers found')
-            return
+    def getComputers(self):
         computers = {}
-        for computer in data['computer']:
-            computers[computer['displayName']] = not computer['offline']
+        nodes = self.server.get_nodes()
+        for entry in nodes:
+            name = entry['name']
+            if 'diesel' in name or 'ethanol' in name or 'goldengoose' in name or 'grandstand' in name or 'SUT' in name:
+                computers[name] = not entry['offline']
         return computers
 
     def getHostName(self, computer):
         host_name = None
-        url = '%s/computer/%s/' % (self.url, computer)
         try:
-            response = urlopen(url, timeout=5)
-        except Exception as e:
-            print('ERROR: could not open "%s": %s\n%s' % (url, e, traceback.format_exc(e)))
-            return
-        data = response.read()
-        if 'Computer: ' in data:
-            lines = [line.strip() for line in data.splitlines() if line.strip()]
-            for i, line in enumerate(lines):
-                if 'Computer:' in line and 'Username:' in line:
-                    host_name = line.split('Computer: ', 1)[1].split(' ', 1)[0].strip()
-                    return host_name
-        job = self.server.get_job(computer)
-        config = job.get_config()
+            config = self.server.get_node_config(computer)
+        except:
+            print('coult not get node_config for %s' % computer)
+            return host_name
         lines = [line.strip() for line in config.splitlines() if line.strip()]
         for i, line in enumerate(lines):
-            if 'Computer:' in line and 'Username:' in line:
-                host_name = line.split('Computer: ', 1)[1].split(' ', 1)[0].strip()
+            if 'SUT' in computer and '<description>' in line and 'omputer' in line:
+                host_name = line.split('omputer', 1)[1].split(' ', 2)[1].strip()
+                return host_name
         return host_name
 
     def nslookup(self, name=None, ip=None):
         value = None
         if name:
             try:
-                output = subprocess.check_output('nslookup "%s" | grep "Address: " | tail -1' % name, shell=True)
-                if 'Address: ' in output:
+                cmd = 'nslookup "%s" | grep "Address: " | tail -1' % name
+                output = subprocess.check_output(cmd, shell=True)
+                if not 'can\'t find' in output and 'Address: ' in output:
                     value = output.split(' ', 1)[1].strip()
             except Exception as e:
-                pass
+                print('ERROR: nslookup failed for "%s": %s\n%s' % (name, e, traceback.format_exc(e)))
         elif ip:
             try:
-                output = subprocess.check_output('nslookup "%s" | grep "name = " | tail -1' % name, shell=True)
+                cmd = 'nslookup "%s" | grep "name = " | tail -1' % ip
+                output = subprocess.check_output(cmd, shell=True)
                 if 'name = ' in output:
                     value = output.split('name = ', 1)[1].split('.', 1)[0].strip()
             except Exception as e:
-                pass
-            return value
+                print('ERROR: nslookup failed for "%s": %s\n%s' % (name, e, traceback.format_exc(e)))
+        return value
 
     def main(self):
         ips = {}
         computers = self.getComputers()
         for computer in computers:
-            if not 'diesel' in computer and not 'ethanol' in computer and not 'goldengoose' in computer and not 'grandstand' in computer and not 'SUT' in computer:
+            ipaddr = self.nslookup(name=computer)
+            if ipaddr and '.' in ipaddr:
+                ips.setdefault(computer, {'ip': ipaddr})
+                ips[computer]['name'] = self.nslookup(ip=ipaddr)
                 continue
-            ip = self.nslookup(computer)
-            if ip and '.' in ip:
-                ips[computer] = ip
-                break
-            ip = self.getBMCIP(computer)
-            if ip:
-                ips[computer] = ip
-                break
-            ip = self.nslookup(self.getHostName(computer))
-            if ip:
-                ips[computer] = ip
+            ipaddr = self.getBMCIP(computer)
+            if ipaddr:
+                if '.' in ipaddr:
+                    ips.setdefault(computer, {'ip': ipaddr})
+                    ips[computer]['name'] = self.nslookup(ip=ipaddr)
+                else:
+                    ips.setdefault(computer, {'name': ipaddr})
+                    ips[computer]['ip'] = self.nslookup(name=ipaddr)
             else:
-                ips[computer] = 'unknown'
-        for computer, ip in sorted(ips.items()):
-            print('%-20s  %s' % (computer, ip))
+                ips.setdefault(computer, {'ip': 'unknown', 'name': computer})
+        for computer, data in sorted(ips.items()):
+            print('%-20s  %s (%s)' % (computer, data['ip'], data['name'].lower()))
         return
 
 
