@@ -19,11 +19,10 @@ else:
 class SUTHealthCheck(object):
 
     def __init__(self, args):
-        self.host = args.host if args.host else 'sqa-jenkins'
-        self.port = args.port if args.port else 8080
+        self.host = args.host
+        self.port = args.port
         self.url = 'http://%s:%d' % (self.host, self.port)
-        self.password = getpass.getpass()
-        self.server = jenkins.Jenkins(self.url, username='rgoodman', password=self.password.strip())
+        self.server = jenkins.Jenkins(self.url, username=getpass.getuser(), password=getpass.getpass().strip())
         return
 
     def getBMCIP(self, computer):

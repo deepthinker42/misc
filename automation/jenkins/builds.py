@@ -11,6 +11,12 @@ else:
 from utils import connect, getJobNames, getBuilds, nslookup
 
 
+CANNOT_CONTACT = 'Cannot contact'
+CANNOT_REPO_SYNC = 'Cannot repo sync'
+FATAL_REMOTE_CALL_ON = 'FATAL: Remote call on'
+FATAL = 'FATAL:'
+
+
 class Builds(object):
 
     def __init__(self, args):
@@ -20,6 +26,7 @@ class Builds(object):
         self.search = args.search
         self.specific_job = args.job
         self.specific_build = args.build
+        self.list_known = args.list_known
         self.url = 'http://%s:%d' % (self.host, self.port)
         return
 
@@ -53,23 +60,25 @@ class Builds(object):
                     response = urlopen(console_url, timeout=15)
                     lines = response.readlines()
                     error = None
-                    for line in lines:
+                    for i, line in enumerate(lines):
                         line = line.strip()
                         if not error and (': error ' in line or ': fatal error ' in line):
                             error = line.split('</span>', 1)[1]
                         if not self.search in line:
-                            if 'FATAL: Remote call on' in line:
+                            if FATAL_REMOTE_CALL_ON in line:
                                 ip = line.split('to /', 1)[1].split(' ', 1)[0]
                                 failed_hosts.setdefault(nslookup(ip), True)
                             continue
-                        if 'Cannot contact ' in line:
+                        if CANNOT_CONTACT in line:
                             failed_hosts.setdefault(line.split('Cannot contact ', 1)[1].split(':', 1)[0], True)
+                        elif CANNOT_REPO_SYNC in line and 'Srv_BIOS@SQA' in lines[i-4]:
+                            failed_hosts.setdefault(lines[i-4].rsplit('Srv_BIOS@', 1)[1].strip().lower())
                         elif '/' in line:
                             try:
                                 failed_hosts.setdefault(nslookup(line.rsplit('/', 1)[1].rsplit(' ')[0].rsplit(':')[0]), True)
                             except:
                                 failed_hosts.setdefault('unknown', error)
-                        elif 'FATAL:' in line:
+                        elif FATAL in line:
                             failed_hosts.setdefault('fatal', True)
                         else:
                             failed_hosts.setdefault('unknown', error)
@@ -103,8 +112,15 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--search', help='String to search for in the build logs (only valid for --bcs)', default=None)
     parser.add_argument('-j', '--job', help='Only search a specific job (only valid for --bcs)', default=None)
     parser.add_argument('-b', '--build', help='Only search a specific build (only valid for --bcs)', default=None)
+    parser.add_argument('-l', '--list-known', help='List known search strings', action='store_true')
     args = parser.parse_args()
-    B = Builds(args)
-    if not B.main():
-        exit(1)
+    if args.list_known:
+        print('"%s" to find remoting issues' % CANNOT_CONTACT)
+        print('"%s" to find repo sync issues' % CANNOT_REPO_SYNC)
+        print('"%s"' % FATAL_REMOTE_CALL_ON)
+        print('"%s"' % FATAL)
+        exit(0)
+    else:
+        B = Builds(args)
+        exit(1 if not B.main() else 0)
 
