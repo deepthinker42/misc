@@ -20,10 +20,29 @@ export PATH
 shopt -s histappend
 export PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
 
+GIT_BRANCH_BLACK="0;30"
+GIT_BRANCH_RED="0;31"
+GIT_BRANCH_GREEN="0;32"
+GIT_BRANCH_BROWN_ORANGE="0;33"
+GIT_BRANCH_BLUE="0;34"
+GIT_BRANCH_PURPLE="0;35"
+GIT_BRANCH_CYAN="0;36"
+GIT_BRANCH_LIGHT_GRAY="0;37"
+GIT_BRANCH_DARK_GRAY="1;30"
+GIT_BRANCH_LIGHT_RED="1;31"
+GIT_BRANCH_LIGHT_GREEN="1;32"
+GIT_BRANCH_YELLOW="1;33"
+GIT_BRANCH_LIGHT_BLUE="1;34"
+GIT_BRANCH_LIGHT_PURPLE="1;35"
+GIT_BRANCH_LIGHT_CYAN="1;36"
+GIT_BRANCH_WHITE="1;37"
+export GIT_BRANCH_COLOR_ON="\[\033[${GIT_BRANCH_YELLOW}m\]"
+export GIT_BRANCH_COLOR_OFF="\[\033[00m\]"
+
 parse_git_branch() {
 	git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
 }
-export PS1="\n[\D{%F %T} \h \u \w\[\033[33m\]\$(parse_git_branch)\[\033[00m\]] "
+export PS1="\n[\D{%F %T} \h \u \w${GIT_BRANCH_COLOR_ON}\$(parse_git_branch)${GIT_BRANCH_COLOR_OFF}] "
 
 export NVM_DIR="$HOME/.nvm"
 #[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
