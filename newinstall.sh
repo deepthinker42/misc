@@ -16,4 +16,8 @@ sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.co
 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
 sudo dnf install -y brave-browser
 
+sudo dnf group install -y --with-optional virtualization
+sudo systemctl start libvirtd
+sudo systemctl enable libvirtd
+
 a
