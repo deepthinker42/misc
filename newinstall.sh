@@ -20,4 +20,9 @@ sudo dnf group install -y --with-optional virtualization
 sudo systemctl start libvirtd
 sudo systemctl enable libvirtd
 
-a
+sudo dnf group install -y "Administration Tools" "Audio Production" "Container Management" "Development Tools" "D Development Tools and Libraries" "Games and Entertainment" "RPM Development Tools" "System Tools"
+sudo dnf install -y golang
+sudo dnf install -y npm
+sudo dnf install -y kubernetes ansible kubernetes-ansible kubernetes-kubeadm
+
+#
