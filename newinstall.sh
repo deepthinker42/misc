@@ -1,6 +1,9 @@
 #!/bin/bash
 
-sudo dnf install -y wget
+#
+# Ubuntu
+#
+sudo apt install -y ubuntu-mate-wallpapers-complete mate-sensors-applet-common mate-session-manager mate-system-monitor mate-menus mate-desktop-environment-extras mate-desktop-environment-extra mate-hud mate-icon-theme mate-background mate-backgrounds ubuntu-restricted-extras ubuntu-mate-desktop gnome-tweaks gufw brasero synaptic Ubuntu-restricted-extras openjdk-15-jdk golang-1.13 ruby flatpak flcsimplescreenrecorder gimp python3-pip gcc g++ xsane openssh-server net-tools ansible ansible-doc ansible-lint ansible-tower-cli ansible-tower-cli-doc gnome-software-plugin-flatpak curl software-properties-common apt-transport-https wget
 
 wget https://github.com/balena-io/etcher/releases/download/v1.5.113/balena-etcher-electron-1.5.113-linux-ia32.zip
 unzip balena-etcher-electron-1.5.113-linux-ia32.zip
